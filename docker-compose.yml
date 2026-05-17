@@ -1,0 +1,46 @@
+services:
+  xray-checker:
+    image: kutovoys/xray-checker
+    container_name: xray-checker
+    restart: unless-stopped
+
+    environment:
+      SUBSCRIPTION_URL: "${SUBSCRIPTION_URL}"
+      SUBSCRIPTION_UPDATE: "true"
+      SUBSCRIPTION_UPDATE_INTERVAL: "300"
+
+      PROXY_CHECK_INTERVAL: "60"
+      PROXY_CHECK_METHOD: "ip"
+      PROXY_TIMEOUT: "20"
+      PROXY_IP_CHECK_URL: "https://api.ipify.org?format=text"
+      PROXY_STATUS_CHECK_URL: "http://cp.cloudflare.com/generate_204"
+
+      SIMULATE_LATENCY: "true"
+      XRAY_START_PORT: "10000"
+      XRAY_LOG_LEVEL: "none"
+
+      METRICS_HOST: "0.0.0.0"
+      METRICS_PORT: "2112"
+      METRICS_PROTECTED: "true"
+      METRICS_USERNAME: "${XRAY_CHECKER_USER}"
+      METRICS_PASSWORD: "${XRAY_CHECKER_PASS}"
+
+      WEB_PUBLIC: "true"
+      LOG_LEVEL: "info"
+
+    ports:
+      - "127.0.0.1:2112:2112"
+
+  cf-xray-sync:
+    build: .
+    container_name: cf-xray-sync
+    restart: unless-stopped
+
+    depends_on:
+      - xray-checker
+
+    env_file:
+      - .env
+
+    environment:
+      XRAY_CHECKER_URL: "http://xray-checker:2112"
